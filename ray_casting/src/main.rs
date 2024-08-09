@@ -3,9 +3,11 @@ mod color;
 mod bmp;
 mod maze;
 mod player;
+mod caster;
 use crate::maze::{load_maze};
 use crate::framebuffer::FrameBuffer;
 use crate::color::Color;
+use crate::caster::{cast_ray, Intersect};
 use minifb::{Window, WindowOptions, Key};
 use crate::player::Player;
 use std::time::Duration;
@@ -31,6 +33,7 @@ fn render2d(framebuffer: &mut FrameBuffer, player: &mut Player){
     }
     framebuffer.set_current_color(Color::new(255,0,0));
     framebuffer.point(player.pos.x as usize, player.pos.y as usize);
+    cast_ray(framebuffer, &maze, &player, player.a, block_size, true);
 }
 fn main() {
     let window_width = 1300;
@@ -54,7 +57,7 @@ fn main() {
     ).unwrap();
     let mut player = Player {
         pos: Vec2::new(250.0, 150.0),
-        a: 32.0
+        a: std::f32::consts::PI/3.0
     };
 
   
