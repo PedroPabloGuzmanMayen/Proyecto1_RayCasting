@@ -13,11 +13,22 @@ use crate::player::{Player, process_event};
 use std::time::Duration;
 use nalgebra_glm::{Vec2};
 
+fn cell_to_color(cell: char) -> Color {
+    match cell {
+        '+' => Color::new(0, 255, 0),
+        '-' => Color::new(255, 255, 0),
+        '|' => Color::new(255, 165, 0),
+        _ => Color::new(255, 255, 255)
+    }
+}
+
 fn draw_cell(framebuffer: &mut FrameBuffer, xo: usize, yo: usize, block_size: usize, cell: char){
     for x in xo..xo+block_size{
         for y in yo..yo+block_size{
 
             if cell != ' ' {
+                let color = cell_to_color(cell);
+                framebuffer.set_current_color(color);
                 framebuffer.point(x,y);
             }
         }
@@ -47,6 +58,17 @@ fn render3d(framebuffer: &mut FrameBuffer, player: &Player){
     let maze = load_maze("maze.txt");
     let block_size = 100;
     let num_rays = framebuffer.width;
+
+    for i in 0..framebuffer.width{
+        for j in 0..(framebuffer.height as f32/2.0) as usize{
+            framebuffer.set_current_color(Color::new(255,165,0));
+            framebuffer.point(i,j);
+        }
+        framebuffer.set_current_color(Color::new(135,206,235));
+        for j in (framebuffer.height/2)..framebuffer.height{
+            framebuffer.point(i, j);
+        }
+    }
     let hh = framebuffer.height as f32 /2.0;
     framebuffer.set_current_color(Color::new(255, 0, 0));
     for i in 0..num_rays{
@@ -55,13 +77,16 @@ fn render3d(framebuffer: &mut FrameBuffer, player: &Player){
         let intersect = cast_ray(framebuffer, &maze, &player, a, block_size, false);
 
         let distance_to_wall = intersect.distance;
-        let distance_to_projection_plane = 100.0;
+        let distance_to_projection_plane = 50.0;
         let stake_height = (hh/ distance_to_wall) * distance_to_projection_plane;
         let stake_top = (hh-(stake_height/2.0)) as usize;
         let stake_bottom = (hh+(stake_height/2.0)) as usize;
         for y in stake_top..stake_bottom{
+            let color = cell_to_color(intersect.impact);
+            framebuffer.set_current_color(color);
             framebuffer.point(i,y);
         }
+
     }
 
 }
@@ -72,7 +97,7 @@ fn main() {
     let framebuffer_width = 1300;
     let framebuffer_height = 900;
   
-    let frame_delay = Duration::from_millis(5);
+    let frame_delay = Duration::from_millis(15);
   
     let mut framebuffer = framebuffer::FrameBuffer::new(framebuffer_width, framebuffer_height);
     framebuffer.set_current_color(Color::new(50,50,100));
@@ -92,6 +117,7 @@ fn main() {
     };
 
     let mut mode = "2D";
+    render2d(&mut framebuffer, &mut player);
 
   
     while window.is_open() {
@@ -107,26 +133,26 @@ fn main() {
                 mode = "2D";
             }
         }
+        framebuffer.set_current_color(Color::new(50,50,100));
+        process_event(&window, &mut player);
+        framebuffer.set_current_color(Color::new(50,50,100));
+        framebuffer.clear();
+        framebuffer.set_current_color(Color::new(50,50,100));
 
         if mode == "2D"{
-            framebuffer.set_current_color(Color::new(50,50,100));
             render2d(&mut framebuffer, &mut player);
-            process_event(&window, &mut player);
-            framebuffer.set_current_color(Color::new(50,50,100));
-            framebuffer.clear();
-            framebuffer.set_current_color(Color::new(50,50,100));
-            render2d(&mut framebuffer, &mut player);
+        }
+        else {
+            render3d(&mut framebuffer, &mut player);
         }
 
-        else {
-            framebuffer.set_current_color(Color::new(50,50,100));
-            render3d(&mut framebuffer, &mut player);
-            process_event(&window, &mut player);
-            framebuffer.set_current_color(Color::new(50,50,100));
-            framebuffer.clear();
-            framebuffer.set_current_color(Color::new(50,50,100));
-            render3d(&mut framebuffer, &mut player);
-        }
+        
+
+    
+
+    
+
+
   
         
   

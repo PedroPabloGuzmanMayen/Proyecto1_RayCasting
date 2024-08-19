@@ -1,5 +1,6 @@
 use crate::color::Color;
 use crate::bmp::write_bmp_file;
+#[derive(Debug, Clone)]
 pub struct FrameBuffer {
     pub width: usize,
     pub height: usize,
