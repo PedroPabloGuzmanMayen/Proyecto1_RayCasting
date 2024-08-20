@@ -34,25 +34,39 @@ fn draw_cell(framebuffer: &mut FrameBuffer, xo: usize, yo: usize, block_size: us
         }
     }
 }
-fn render2d(framebuffer: &mut FrameBuffer, player: &mut Player){
-    let maze = load_maze("maze.txt");
-    let block_size = 100;
 
-    for row in 0..maze.len(){
-        for col in 0..maze[row].len(){
-            draw_cell(framebuffer, col*block_size, row*block_size, block_size, maze[row][col]);
+
+fn render2d(
+    framebuffer: &mut FrameBuffer,
+    player: &Player,
+    offset_x: usize,
+    offset_y: usize,
+    scale: f32,
+) {
+    let maze = load_maze("maze.txt");
+    let block_size = (100.0 * scale) as usize;
+
+    for row in 0..maze.len() {
+        for col in 0..maze[row].len() {
+            let xo = offset_x + (col * block_size);
+            let yo = offset_y + (row * block_size);
+            draw_cell(framebuffer, xo, yo, block_size, maze[row][col]);
         }
     }
-    framebuffer.set_current_color(Color::new(255,0,0));
-    framebuffer.point(player.pos.x as usize, player.pos.y as usize);
+
+    framebuffer.set_current_color(Color::new(255, 0, 0));
+    let player_x = (player.pos.x * scale) as usize + offset_x;
+    let player_y = (player.pos.y * scale) as usize + offset_y;
+    framebuffer.point(player_x, player_y);
+
     let num_rays = 50;
-    for i in 0..num_rays{
+    for i in 0..num_rays {
         let current_ray = i as f32 / num_rays as f32;
-        let a = player.a -(player.fov/2.0) + (player.fov * current_ray);
+        let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
         cast_ray(framebuffer, &maze, &player, a, block_size, true);
     }
-    
 }
+
 
 fn render3d(framebuffer: &mut FrameBuffer, player: &Player) {
     let maze = load_maze("maze.txt");
@@ -91,6 +105,24 @@ fn render3d(framebuffer: &mut FrameBuffer, player: &Player) {
     }
 }
 
+fn render3d_with_minimap(framebuffer: &mut FrameBuffer, player: &Player) {
+    render3d(framebuffer, player); 
+    let minimap_scale = 0.2; 
+    let minimap_width = (framebuffer.width as f32 * minimap_scale) as usize;
+    let minimap_height = (framebuffer.height as f32 * minimap_scale) as usize;
+    let minimap_x_offset = framebuffer.width - minimap_width - 10; 
+    let minimap_y_offset = 10;
+    
+    render2d(
+        framebuffer,
+        player,
+        minimap_x_offset,
+        minimap_y_offset,
+        minimap_scale,
+    ); 
+}
+
+
 fn main() {
     let window_width = 1300;
     let window_height = 900;
@@ -120,9 +152,7 @@ fn main() {
     };
 
     let mut mode = "2D";
-    render2d(&mut framebuffer, &mut player);
 
-  
     while window.is_open() {
         if window.is_key_down(Key::Escape){
             break;
@@ -141,13 +171,8 @@ fn main() {
         framebuffer.set_current_color(Color::new(50,50,100));
         framebuffer.clear();
         framebuffer.set_current_color(Color::new(50,50,100));
+        render3d_with_minimap(&mut framebuffer, &mut player);
 
-        if mode == "2D"{
-            render2d(&mut framebuffer, &mut player);
-        }
-        else {
-            render3d(&mut framebuffer, &mut player);
-        }
         window
             .update_with_buffer(&framebuffer.cast_buffer(), framebuffer_width, framebuffer_height)
             .unwrap();

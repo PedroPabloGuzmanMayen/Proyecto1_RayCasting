@@ -27,6 +27,10 @@ y = (player.pos.y + d * sin) as usize;
 let i = x / block_size;
 let j = y / block_size;
 
+if j >= maze.len() || i >= maze[j].len() {
+    break;  
+}
+
 if draw_line {
  framebuffer.point(x, y);  
 }
@@ -39,5 +43,9 @@ return Intersect {
 }
 
 d += 0.1; 
+}
+Intersect {
+    distance: d,
+    impact: ' ',
 }
 }
