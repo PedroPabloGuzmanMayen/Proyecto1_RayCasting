@@ -54,45 +54,48 @@ fn render2d(framebuffer: &mut FrameBuffer, player: &mut Player){
     
 }
 
-fn render3d(framebuffer: &mut FrameBuffer, player: &Player){
+fn render3d(framebuffer: &mut FrameBuffer, player: &Player) {
     let maze = load_maze("maze.txt");
     let block_size = 100;
     let num_rays = framebuffer.width;
 
-    for i in 0..framebuffer.width{
-        for j in 0..(framebuffer.height as f32/2.0) as usize{
-            framebuffer.set_current_color(Color::new(255,165,0));
-            framebuffer.point(i,j);
+    for i in 0..framebuffer.width {
+        for j in 0..(framebuffer.height as f32 / 2.0) as usize {
+            framebuffer.set_current_color(Color::new(0, 0, 0));
+            framebuffer.point(i, j);
         }
-        framebuffer.set_current_color(Color::new(135,206,235));
-        for j in (framebuffer.height/2)..framebuffer.height{
+        framebuffer.set_current_color(Color::new(135, 206, 235));
+        for j in (framebuffer.height / 2)..framebuffer.height {
             framebuffer.point(i, j);
         }
     }
-    let hh = framebuffer.height as f32 /2.0;
+
+    let hh = framebuffer.height as f32 / 2.0;
     framebuffer.set_current_color(Color::new(255, 0, 0));
-    for i in 0..num_rays{
+    for i in 0..num_rays {
         let current_ray = i as f32 / num_rays as f32;
-        let a = player.a -(player.fov/2.0) + (player.fov * current_ray);
+        let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
         let intersect = cast_ray(framebuffer, &maze, &player, a, block_size, false);
 
-        let distance_to_wall = intersect.distance;
+        let distance_to_wall = intersect.distance.max(0.1);
         let distance_to_projection_plane = 50.0;
-        let stake_height = (hh/ distance_to_wall) * distance_to_projection_plane;
-        let stake_top = (hh-(stake_height/2.0)) as usize;
-        let stake_bottom = (hh+(stake_height/2.0)) as usize;
-        for y in stake_top..stake_bottom{
+        let stake_height = (hh / distance_to_wall) * distance_to_projection_plane;
+        let stake_top = (hh - (stake_height / 2.0)).max(0.0) as usize;
+        let stake_bottom = (hh + (stake_height / 2.0)).min(framebuffer.height as f32 - 1.0) as usize;
+
+        for y in stake_top..stake_bottom {
             let color = cell_to_color(intersect.impact);
             framebuffer.set_current_color(color);
-            framebuffer.point(i,y);
+            framebuffer.point(i, y);
         }
-
     }
-
 }
+
 fn main() {
     let window_width = 1300;
     let window_height = 900;
+    let block_size = 100;
+    let maze = load_maze("maze.txt");
   
     let framebuffer_width = 1300;
     let framebuffer_height = 900;
@@ -134,7 +137,7 @@ fn main() {
             }
         }
         framebuffer.set_current_color(Color::new(50,50,100));
-        process_event(&window, &mut player);
+        process_event(&window, &mut player, &maze, block_size);
         framebuffer.set_current_color(Color::new(50,50,100));
         framebuffer.clear();
         framebuffer.set_current_color(Color::new(50,50,100));
@@ -145,17 +148,6 @@ fn main() {
         else {
             render3d(&mut framebuffer, &mut player);
         }
-
-        
-
-    
-
-    
-
-
-  
-        
-  
         window
             .update_with_buffer(&framebuffer.cast_buffer(), framebuffer_width, framebuffer_height)
             .unwrap();

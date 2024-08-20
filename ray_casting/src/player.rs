@@ -10,28 +10,48 @@ pub struct Player {
 
 }
 
-pub fn process_event(window: &Window, player: &mut Player){
-    const SPEED:f32 = 5.0;
-    const ROTATION_SPEED:f32 = PI/20.0;
-    let mut move_x = 0.0;
-    let mut move_y = 0.0;
+pub fn process_event(window: &Window, player: &mut Player, maze: &Vec<Vec<char>>, block_size: usize) {
+    const SPEED: f32 = 5.0;
+    const ROTATION_SPEED: f32 = PI / 20.0;
+
     if window.is_key_down(Key::Left) {
         player.a -= ROTATION_SPEED;
     }
-    if window.is_key_down(Key::Right){
+    if window.is_key_down(Key::Right) {
         player.a += ROTATION_SPEED;
     }
 
-    if window.is_key_down(Key::Up){
-        player.pos.x = player.pos.x + SPEED * player.a.cos();
-        player.pos.y = player.pos.y + SPEED * player.a.sin();
-        
-    
+    let mut next_x;
+    let mut next_y;
+
+    if window.is_key_down(Key::Up) {
+        next_x = player.pos.x + SPEED * player.a.cos();
+        next_y = player.pos.y + SPEED * player.a.sin();
+        if !is_wall(maze, next_x, next_y, block_size) {
+            player.pos.x = next_x;
+            player.pos.y = next_y;
+        }
     }
 
-    if window.is_key_down(Key::Down){
-        player.pos.x = player.pos.x - SPEED * player.a.cos();
-        player.pos.y = player.pos.y - SPEED * player.a.sin();
-
+    if window.is_key_down(Key::Down) {
+        next_x = player.pos.x - SPEED * player.a.cos();
+        next_y = player.pos.y - SPEED * player.a.sin();
+        if !is_wall(maze, next_x, next_y, block_size) {
+            player.pos.x = next_x;
+            player.pos.y = next_y;
+        }
     }
+}
+
+
+
+fn is_wall(maze: &Vec<Vec<char>>, x: f32, y: f32, block_size: usize) -> bool {
+    let row = (y / block_size as f32) as usize;
+    let col = (x / block_size as f32) as usize;
+
+    if row >= maze.len() || col >= maze[row].len() {
+        return false;
+    }
+
+    maze[row][col] != ' '
 }
