@@ -18,7 +18,8 @@ fn cell_to_color(cell: char) -> Color {
         '+' => Color::new(0, 255, 0),
         '-' => Color::new(255, 255, 0),
         '|' => Color::new(255, 165, 0),
-        _ => Color::new(255, 255, 255)
+        ' ' => Color::new(255, 255, 255),
+        _ => Color::new(0,0,0)
     }
 }
 
