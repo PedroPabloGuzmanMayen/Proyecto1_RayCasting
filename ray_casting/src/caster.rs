@@ -5,7 +5,8 @@ use crate::color::Color;
 
 pub struct Intersect {
     pub distance: f32,
-    pub impact: char
+    pub impact: char,
+    pub tx: usize
 }
 
 pub fn cast_ray(framebuffer: &mut FrameBuffer, maze: &Vec<Vec<char>>, player: &Player,
@@ -26,6 +27,7 @@ y = (player.pos.y + d * sin) as usize;
 
 let i = x / block_size;
 let j = y / block_size;
+let tx = x- i * block_size;
 
 if j >= maze.len() || i >= maze[j].len() {
     break;  
@@ -38,7 +40,8 @@ if draw_line {
 if maze[j][i] != ' ' {
 return Intersect {
     distance: d,
-    impact: maze[j][i]
+    impact: maze[j][i],
+    tx: tx
 };
 }
 
@@ -47,5 +50,6 @@ d += 0.1;
 Intersect {
     distance: d,
     impact: ' ',
+    tx: 0
 }
 }

@@ -11,7 +11,7 @@ pub struct Player {
 }
 
 pub fn process_event(window: &Window, player: &mut Player, maze: &Vec<Vec<char>>, block_size: usize) {
-    const SPEED: f32 = 5.0;
+    const SPEED: f32 = 25.0;
     const ROTATION_SPEED: f32 = PI / 20.0;
 
     if window.is_key_down(Key::Left) {
