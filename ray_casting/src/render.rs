@@ -9,16 +9,35 @@ use once_cell::sync::Lazy;
 use std::sync::Arc;
 
 
-static WALL1:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/metal.png")));
-const base_directory: &str = "/assets/levels/";
+static WALL1:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/wall1.png")));
+static WALL2:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/wall2.png")));
+static WALL3:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/computer.png")));
+static WALL4:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/ventilador.png")));
+static WALL5:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/wall4.png")));
+static WALL6:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/wall3.png")));
+static WELCOME:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/Welcome.png")));
 
 
-fn cell_to_texture(cell: char, tx:u32, ty:u32) -> Color {
+
+fn cell_to_texture(cell: char, tx:u32, ty:u32, level: usize) -> Color {
+    let wall = match level {
+        1 => WALL1.clone(),
+        2 => WALL3.clone(),
+        3 => WALL5.clone(),
+        _ => WALL1.clone()
+    };
+
+    let wall2 = match level {
+        1 => WALL2.clone(),
+        2 => WALL4.clone(),
+        3 => WALL6.clone(),
+        _ => WALL2.clone()
+    };
     match cell {
-        '+' => WALL1.get_pixel_color(tx, ty),
-        '-' => Color::new(255, 255, 0),
-        '|' => Color::new(255, 165, 0),
-        ' ' => Color::new(255, 255, 255),
+        '+' => wall.get_pixel_color(tx, ty),
+        '-' => wall2.get_pixel_color(tx, ty),
+        '|' => wall.get_pixel_color(tx, ty),
+        ' ' => wall2.get_pixel_color(tx, ty),
         _ => Color::new(0,0,0)
     }
 }
@@ -53,8 +72,16 @@ fn render2d(
     offset_x: usize,
     offset_y: usize,
     scale: f32,
+    level:usize
 ) {
-    let maze = load_maze("assets/levels/level1.txt");
+
+    let level_name = match level {
+        1 => "assets/levels/level1.txt",
+        2 => "assets/levels/level2.txt",
+        3 => "assets/levels/level3.txt",
+        _ => "assets/levels/level1.txt"
+    };
+    let maze = load_maze(level_name);
     let block_size = (100.0 * scale) as usize;
 
     for row in 0..maze.len() {
@@ -70,7 +97,7 @@ fn render2d(
     let player_y = (player.pos.y * scale) as usize + offset_y;
     framebuffer.point(player_x, player_y);
 
-    let num_rays = 50;
+    let num_rays = 5;
     for i in 0..num_rays {
         let current_ray = i as f32 / num_rays as f32;
         let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
@@ -79,8 +106,15 @@ fn render2d(
 }
 
 
-fn render3d(framebuffer: &mut FrameBuffer, player: &Player) {
-    let maze = load_maze("assets/levels/level1.txt");
+fn render3d(framebuffer: &mut FrameBuffer, player: &Player, level:usize) {
+
+    let level_name = match level {
+        1 => "assets/levels/level1.txt",
+        2 => "assets/levels/level2.txt",
+        3 => "assets/levels/level3.txt",
+        _ => "assets/levels/level1.txt"
+    };
+    let maze = load_maze(level_name);
     let block_size = 100;
     let num_rays = framebuffer.width;
 
@@ -89,7 +123,7 @@ fn render3d(framebuffer: &mut FrameBuffer, player: &Player) {
             framebuffer.set_current_color(Color::new(0, 0, 0));
             framebuffer.point(i, j);
         }
-        framebuffer.set_current_color(Color::new(135, 206, 235));
+        framebuffer.set_current_color(Color::new(128, 128, 128));
         for j in (framebuffer.height / 2)..framebuffer.height {
             framebuffer.point(i, j);
         }
@@ -111,15 +145,15 @@ fn render3d(framebuffer: &mut FrameBuffer, player: &Player) {
         for y in stake_top..stake_bottom {
             let ty = (y as f32-stake_top as f32)/(stake_bottom as f32-stake_top as f32) * 128.0;
             let tx = intersect.tx;
-            let color = cell_to_texture(intersect.impact, tx as u32, ty as u32 );
+            let color = cell_to_texture(intersect.impact, tx as u32, ty as u32, level );
             framebuffer.set_current_color(color);
             framebuffer.point(i, y);
         }
     }
 }
 
-pub fn render3d_with_minimap(framebuffer: &mut FrameBuffer, player: &Player) {
-    render3d(framebuffer, player); 
+pub fn render3d_with_minimap(framebuffer: &mut FrameBuffer, player: &Player, level:usize) {
+    render3d(framebuffer, player, level); 
     let minimap_scale = 0.2; 
     let minimap_width = (framebuffer.width as f32 * minimap_scale) as usize;
     let minimap_height = (framebuffer.height as f32 * minimap_scale) as usize;
@@ -132,13 +166,32 @@ pub fn render3d_with_minimap(framebuffer: &mut FrameBuffer, player: &Player) {
         minimap_x_offset,
         minimap_y_offset,
         minimap_scale,
+        level
     ); 
 }
 
-pub fn render_menu(framebuffer: &mut FrameBuffer){
-    framebuffer.set_background_color(Color::new(255,255,0));
+pub fn render_menu(framebuffer: &mut FrameBuffer) {
     framebuffer.clear();
+
+    let texture_width = 128.0;
+    let texture_height = 128.0;
+
+    let fb_width = framebuffer.width;
+    let fb_height = framebuffer.height;
+
+    for x in 0..fb_width {
+        for y in 0..fb_height {
+            
+            let tx = (x as f32 / fb_width as f32 * texture_width as f32) as u32;
+            let ty = (y as f32 / fb_height as f32 * texture_height as f32) as u32;
+
+            let color = WALL1.get_pixel_color(tx, ty);
+            framebuffer.set_current_color(color);
+            framebuffer.point(x, y);
+        }
+    }
 }
+
 
 
 pub fn write_something(text:&str) {

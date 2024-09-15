@@ -28,7 +28,13 @@ y = (player.pos.y + d * sin) as usize;
 let i = x / block_size;
 let j = y / block_size;
 let tx = x- i * block_size;
+let hitx = y-j * block_size;
+let hity = x-i * block_size;
+let mut max_hit = hity;
 
+if 1 < hitx &&  hitx < block_size-1{
+    max_hit = hitx
+}
 if j >= maze.len() || i >= maze[j].len() {
     break;  
 }
@@ -41,7 +47,7 @@ if maze[j][i] != ' ' {
 return Intersect {
     distance: d,
     impact: maze[j][i],
-    tx: tx
+    tx: max_hit
 };
 }
 
