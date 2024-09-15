@@ -25,6 +25,7 @@ fn main() {
     let window_height = 900;
     let block_size = 100;
     let maze = load_maze("assets/levels/level1.txt");
+    const EXIT_POSITION: Vec2 = Vec2::new(500.0, 300.0);
   
     let framebuffer_width = 1300;
     let framebuffer_height = 900;
@@ -90,13 +91,17 @@ fn main() {
         }
         else{
             framebuffer.set_current_color(Color::new(50,50,100));
-            process_event(&window, &mut player, &maze, block_size);
+            process_event(&window, &mut player, level, block_size);
             framebuffer.set_current_color(Color::new(50,50,100));
             framebuffer.clear();
             framebuffer.set_current_color(Color::new(50,50,100));
             render3d_with_minimap(&mut framebuffer, &mut player, level);
-        }
 
+            if (player.pos - EXIT_POSITION).magnitude() < block_size as f32 {
+                println!("Player has reached the exit position. Exiting the game...");
+                break;
+            }
+        }
 
         window
             .update_with_buffer(&framebuffer.cast_buffer(), framebuffer_width, framebuffer_height)
