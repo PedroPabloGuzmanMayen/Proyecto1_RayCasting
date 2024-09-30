@@ -15,7 +15,7 @@ use minifb::{Window, WindowOptions, Key};
 use crate::player::{Player, process_event};
 use std::time::{Instant, Duration};
 use nalgebra_glm::{Vec2};
-use render::{render3d_with_minimap, render_menu};
+use render::{render3d_with_minimap, render_menu, render_enemies};
 
 
 
@@ -37,7 +37,7 @@ fn main() {
     framebuffer.set_current_color(Color::new(50,50,100));
 
     
-  
+    let mut z_buffer = vec![f32::INFINITY; framebuffer.width];
     let mut window = Window::new(
         "Rust Graphics - Render Loop Example",
         window_width,
@@ -95,12 +95,8 @@ fn main() {
             framebuffer.set_current_color(Color::new(50,50,100));
             framebuffer.clear();
             framebuffer.set_current_color(Color::new(50,50,100));
-            render3d_with_minimap(&mut framebuffer, &mut player, level);
-
-            if (player.pos - EXIT_POSITION).magnitude() < block_size as f32 {
-                println!("Player has reached the exit position. Exiting the game...");
-                break;
-            }
+            render3d_with_minimap(&mut framebuffer, &mut player, level, &mut z_buffer);
+            render_enemies(&mut framebuffer, &player, &mut z_buffer);
         }
 
         window

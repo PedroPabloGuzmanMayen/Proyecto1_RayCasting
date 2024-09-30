@@ -3,6 +3,7 @@ use crate::framebuffer::FrameBuffer;
 use crate::color::Color;
 use crate::player::Player;
 use crate::texture::Texture;
+use nalgebra_glm::{Vec2};
 use crate::caster::{cast_ray, Intersect};
 use minifb::{Window, Key};
 use once_cell::sync::Lazy;
@@ -16,6 +17,7 @@ static WALL4:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/tex
 static WALL5:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/wall4.png")));
 static WALL6:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/wall3.png")));
 static WELCOME:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/Welcome.png")));
+static COIN:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/key_big.png")));
 
 
 
@@ -106,7 +108,7 @@ fn render2d(
 }
 
 
-fn render3d(framebuffer: &mut FrameBuffer, player: &Player, level:usize) {
+fn render3d(framebuffer: &mut FrameBuffer, player: &Player, level:usize, z_Buffer: &mut [f32]) {
 
     let level_name = match level {
         1 => "assets/levels/level1.txt",
@@ -141,7 +143,7 @@ fn render3d(framebuffer: &mut FrameBuffer, player: &Player, level:usize) {
         let stake_height = (hh / distance_to_wall) * distance_to_projection_plane;
         let stake_top = (hh - (stake_height / 2.0)).max(0.0) as usize;
         let stake_bottom = (hh + (stake_height / 2.0)).min(framebuffer.height as f32 - 1.0) as usize;
-
+        z_Buffer[i] = distance_to_wall;
         for y in stake_top..stake_bottom {
             let ty = (y as f32-stake_top as f32)/(stake_bottom as f32-stake_top as f32) * 128.0;
             let tx = intersect.tx;
@@ -152,8 +154,8 @@ fn render3d(framebuffer: &mut FrameBuffer, player: &Player, level:usize) {
     }
 }
 
-pub fn render3d_with_minimap(framebuffer: &mut FrameBuffer, player: &Player, level:usize) {
-    render3d(framebuffer, player, level); 
+pub fn render3d_with_minimap(framebuffer: &mut FrameBuffer, player: &Player, level:usize, z_Buffer: &mut [f32]) {
+    render3d(framebuffer, player, level, z_Buffer); 
     let minimap_scale = 0.2; 
     let minimap_width = (framebuffer.width as f32 * minimap_scale) as usize;
     let minimap_height = (framebuffer.height as f32 * minimap_scale) as usize;
@@ -192,8 +194,56 @@ pub fn render_menu(framebuffer: &mut FrameBuffer) {
     }
 }
 
+pub fn render_enemy(framebuffer: &mut FrameBuffer, player: &Player, pos:&Vec2, z_Buffer: &mut [f32]){
+    let sprite_a = (pos.y - player.pos.y).atan2(pos.x - player.pos.x);
+
+    if sprite_a < 0.0 {
+        return;
+    }
+
+    let sprite_d = ((player.pos.x - pos.x).powi(2) + (player.pos.y - pos.y).powi(2)).sqrt();
 
 
-pub fn write_something(text:&str) {
+    if sprite_d < 10.0{
+        return;
+    }
+
+    let screen_height = framebuffer.height;
+    let screen_width = framebuffer.width;
+
+    let sprite_size = (screen_height as f32 / sprite_d) * 100.0;
+    let start_x = ((sprite_a - player.a) * (screen_height as f32 / player.fov) + (screen_width as f32 / 2.0) - (sprite_size / 2.0)).max(0.0);
+    let start_y = ((screen_height as f32/2.0) - (sprite_size/2.0)).max(0.0);
+    let end_x = ((start_x + sprite_size) as usize).min(framebuffer.width);
+    let end_y = ((start_y+ sprite_size) as usize).min(framebuffer.height);
+
+    if end_x <= 0{
+        return;
+    }
+
+    if (start_x as usize) < framebuffer.width && sprite_d < z_Buffer[start_x as usize ]{
+        for x in start_x as usize..end_x{
+            for y in start_y as usize..end_y as usize{
+                let tx = ((x -start_x as usize) * 32 / sprite_size as usize) as u32;
+                let ty = (((y - start_y as usize)) * 32 / sprite_size as usize) as u32;
+                let color = COIN.get_pixel_color(tx, ty);
+                if color.to_hex() != Color::new(0,0,0).to_hex() && color.to_hex() != Color::new(255,0,0).to_hex(){
+                    framebuffer.set_current_color(color);
+                    framebuffer.point(x,y)
+                }
+            }
+    
+            z_Buffer[x] = sprite_d;
+        }
+    }
+    
     
 }
+pub fn render_enemies(framebuffer: &mut FrameBuffer, player: &Player, z_Buffer: &mut [f32]){
+    let enemies = vec![Vec2::new(350.0, 350.0)];
+
+    for enemy in enemies{
+        render_enemy(framebuffer, player, &enemy, z_Buffer);
+    }
+}
+

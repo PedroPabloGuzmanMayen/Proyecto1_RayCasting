@@ -20,7 +20,12 @@ impl Texture {
     }
 
     pub fn get_pixel_color(&self, x:u32, y:u32) -> Color{
+        if x >=self.width || y >= self.height{
+            return Color::new(255,0,0);
+        }
+
         let pixel = self.image.get_pixel(x,y);
         Color::new(pixel[0], pixel[1], pixel[2])
+        
     }
 }
