@@ -2,17 +2,22 @@ use std::f32::consts::PI;
 use crate::maze::{load_maze};
 use nalgebra_glm::{Vec2};
 use minifb::{Window, Key};
+use crate::music::AudioPlayer;
 #[derive(Debug, Copy, Clone)]
+
 pub struct Player {
     pub pos: Vec2,
     pub a: f32,
-    pub fov: f32
+    pub fov: f32,
+    pub mouse_sensitivity: f32,
+    pub last_mouse_x: f32
 
 }
 
 pub fn process_event(window: &Window, player: &mut Player, level: usize, block_size: usize) {
-    const SPEED: f32 = 25.0;
-    const ROTATION_SPEED: f32 = PI / 20.0;
+    let mut audio = AudioPlayer::new("assets/music/pasos.mp3");
+    const SPEED: f32 = 8.0;
+    const ROTATION_SPEED: f32 = PI / 60.0;
 
     let lvl_name = match level {
         1 => "assets/levels/level1.txt",
@@ -40,6 +45,7 @@ pub fn process_event(window: &Window, player: &mut Player, level: usize, block_s
             player.pos.x = next_x;
             player.pos.y = next_y;
         }
+        audio.play();
     }
 
     if window.is_key_down(Key::Down) {
@@ -50,7 +56,21 @@ pub fn process_event(window: &Window, player: &mut Player, level: usize, block_s
             player.pos.y = next_y;
         }
     }
+
+
+    if let Some(mouse_pos) = window.get_mouse_pos(minifb::MouseMode::Discard) {
+        let mouse_x = mouse_pos.0 as f32;
+        let mouse_sensitivity = player.mouse_sensitivity;
+
+        let delta_x = mouse_x - player.last_mouse_x;
+
+        player.a -= delta_x * mouse_sensitivity;
+        player.last_mouse_x = mouse_x;
+
+        player.a = player.a % (2.0 * PI);
+    }
 }
+
 
 
 
@@ -63,4 +83,9 @@ fn is_wall(maze: &Vec<Vec<char>>, x: f32, y: f32, block_size: usize) -> bool {
     }
 
     maze[row][col] != ' '
+}
+
+
+fn move_enemy(enemies: &mut Vec<Vec2>, maze: &Vec<Vec<char>>, block_size: usize, enemy_speed: usize) {
+    
 }

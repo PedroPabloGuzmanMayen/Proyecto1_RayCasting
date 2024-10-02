@@ -21,7 +21,7 @@ static COIN:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/text
 
 
 
-fn cell_to_texture(cell: char, tx:u32, ty:u32, level: usize) -> Color {
+fn cell_to_texture(cell: char, tx:u32, ty:u32, level: usize, enemies: &mut Vec<Vec2>) -> Color {
     let wall = match level {
         1 => WALL1.clone(),
         2 => WALL3.clone(),
@@ -39,7 +39,7 @@ fn cell_to_texture(cell: char, tx:u32, ty:u32, level: usize) -> Color {
         '+' => wall.get_pixel_color(tx, ty),
         '-' => wall2.get_pixel_color(tx, ty),
         '|' => wall.get_pixel_color(tx, ty),
-        ' ' => wall2.get_pixel_color(tx, ty),
+        //' ' => wall2.get_pixel_color(tx, ty),
         _ => Color::new(0,0,0)
     }
 }
@@ -108,7 +108,7 @@ fn render2d(
 }
 
 
-fn render3d(framebuffer: &mut FrameBuffer, player: &Player, level:usize, z_Buffer: &mut [f32]) {
+fn render3d(framebuffer: &mut FrameBuffer, player: &Player, level:usize, z_Buffer: &mut [f32], enemies: &mut Vec<Vec2>) {
 
     let level_name = match level {
         1 => "assets/levels/level1.txt",
@@ -147,15 +147,15 @@ fn render3d(framebuffer: &mut FrameBuffer, player: &Player, level:usize, z_Buffe
         for y in stake_top..stake_bottom {
             let ty = (y as f32-stake_top as f32)/(stake_bottom as f32-stake_top as f32) * 128.0;
             let tx = intersect.tx;
-            let color = cell_to_texture(intersect.impact, tx as u32, ty as u32, level );
+            let color = cell_to_texture(intersect.impact, tx as u32, ty as u32, level, enemies);
             framebuffer.set_current_color(color);
             framebuffer.point(i, y);
         }
     }
 }
 
-pub fn render3d_with_minimap(framebuffer: &mut FrameBuffer, player: &Player, level:usize, z_Buffer: &mut [f32]) {
-    render3d(framebuffer, player, level, z_Buffer); 
+pub fn render3d_with_minimap(framebuffer: &mut FrameBuffer, player: &Player, level:usize, z_Buffer: &mut [f32], enemies: &mut Vec<Vec2>) {
+    render3d(framebuffer, player, level, z_Buffer,enemies); 
     let minimap_scale = 0.2; 
     let minimap_width = (framebuffer.width as f32 * minimap_scale) as usize;
     let minimap_height = (framebuffer.height as f32 * minimap_scale) as usize;
@@ -204,7 +204,7 @@ pub fn render_enemy(framebuffer: &mut FrameBuffer, player: &Player, pos:&Vec2, z
     let sprite_d = ((player.pos.x - pos.x).powi(2) + (player.pos.y - pos.y).powi(2)).sqrt();
 
 
-    if sprite_d < 10.0{
+    if sprite_d < 400.0{
         return;
     }
 
@@ -239,8 +239,7 @@ pub fn render_enemy(framebuffer: &mut FrameBuffer, player: &Player, pos:&Vec2, z
     
     
 }
-pub fn render_enemies(framebuffer: &mut FrameBuffer, player: &Player, z_Buffer: &mut [f32]){
-    let enemies = vec![Vec2::new(350.0, 350.0)];
+pub fn render_enemies(framebuffer: &mut FrameBuffer, player: &Player, z_Buffer: &mut [f32], enemies: &Vec<Vec2>){
 
     for enemy in enemies{
         render_enemy(framebuffer, player, &enemy, z_Buffer);
