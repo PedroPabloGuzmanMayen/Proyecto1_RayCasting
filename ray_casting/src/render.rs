@@ -16,9 +16,9 @@ static WALL3:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/tex
 static WALL4:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/ventilador.png")));
 static WALL5:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/wall4.png")));
 static WALL6:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/wall3.png")));
-static WELCOME:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/Welcome.png")));
+static WELCOME:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/main.png")));
 static COIN:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/key_big.png")));
-
+static SELECT:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/select.png")));
 
 
 fn cell_to_texture(cell: char, tx:u32, ty:u32, level: usize, enemies: &mut Vec<Vec2>) -> Color {
@@ -172,11 +172,16 @@ pub fn render3d_with_minimap(framebuffer: &mut FrameBuffer, player: &Player, lev
     ); 
 }
 
-pub fn render_menu(framebuffer: &mut FrameBuffer) {
+pub fn render_menu(framebuffer: &mut FrameBuffer, mode: usize) {
     framebuffer.clear();
 
-    let texture_width = 128.0;
-    let texture_height = 128.0;
+    let image = match mode {
+        1 => WELCOME.clone(),
+        _ => SELECT.clone()
+    };
+
+    let texture_width = 1920.0;
+    let texture_height = 1080.0;
 
     let fb_width = framebuffer.width;
     let fb_height = framebuffer.height;
@@ -187,7 +192,7 @@ pub fn render_menu(framebuffer: &mut FrameBuffer) {
             let tx = (x as f32 / fb_width as f32 * texture_width as f32) as u32;
             let ty = (y as f32 / fb_height as f32 * texture_height as f32) as u32;
 
-            let color = WALL1.get_pixel_color(tx, ty);
+            let color = image.get_pixel_color(tx, ty);
             framebuffer.set_current_color(color);
             framebuffer.point(x, y);
         }

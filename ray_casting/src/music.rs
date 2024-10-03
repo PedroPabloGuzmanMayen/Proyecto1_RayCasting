@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 pub struct AudioPlayer {
     sink: Arc<Mutex<Sink>>,
     _stream: OutputStream,
+    music_file: String,  // Store the file path for later use
 }
 
 impl AudioPlayer {
@@ -13,19 +14,22 @@ impl AudioPlayer {
         let (stream, stream_handle) = OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&stream_handle).unwrap();
 
-        let file = BufReader::new(File::open(music_file).unwrap());
-        let source = Decoder::new(file).unwrap();
-        sink.append(source);
-        sink.set_volume(0.5);
-
         AudioPlayer {
             sink: Arc::new(Mutex::new(sink)),
             _stream: stream,
+            music_file: music_file.to_string(), 
         }
     }
 
     pub fn play(&self) {
-        self.sink.lock().unwrap().play();
+        let file = BufReader::new(File::open(&self.music_file).unwrap());
+        let source = Decoder::new(file).unwrap();
+        
+
+        let mut sink = self.sink.lock().unwrap();
+        sink.stop();
+        sink.append(source);
+        sink.play();
     }
 
     pub fn stop(&self) {

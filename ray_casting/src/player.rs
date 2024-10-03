@@ -14,8 +14,7 @@ pub struct Player {
 
 }
 
-pub fn process_event(window: &Window, player: &mut Player, level: usize, block_size: usize) {
-    let mut audio = AudioPlayer::new("assets/music/pasos.mp3");
+pub fn process_event(window: &Window, player: &mut Player, level: usize, block_size: usize, audio: &mut AudioPlayer) {
     const SPEED: f32 = 8.0;
     const ROTATION_SPEED: f32 = PI / 60.0;
 
@@ -27,6 +26,7 @@ pub fn process_event(window: &Window, player: &mut Player, level: usize, block_s
     };
 
     let maze = load_maze(lvl_name);
+    let moved = false;
 
     if window.is_key_down(Key::Left) {
         player.a -= ROTATION_SPEED;
@@ -45,7 +45,6 @@ pub fn process_event(window: &Window, player: &mut Player, level: usize, block_s
             player.pos.x = next_x;
             player.pos.y = next_y;
         }
-        audio.play();
     }
 
     if window.is_key_down(Key::Down) {
@@ -55,6 +54,7 @@ pub fn process_event(window: &Window, player: &mut Player, level: usize, block_s
             player.pos.x = next_x;
             player.pos.y = next_y;
         }
+
     }
 
 
