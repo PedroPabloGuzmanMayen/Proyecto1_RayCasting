@@ -3,6 +3,7 @@ use crate::maze::{load_maze};
 use nalgebra_glm::{Vec2};
 use minifb::{Window, Key};
 use crate::music::AudioPlayer;
+use gilrs::{Gilrs, Button, Event};
 #[derive(Debug, Copy, Clone)]
 
 pub struct Player {
@@ -14,7 +15,7 @@ pub struct Player {
 
 }
 
-pub fn process_event(window: &Window, player: &mut Player, level: usize, block_size: usize, audio: &mut AudioPlayer) {
+pub fn process_event(window: &Window, player: &mut Player, level: usize, block_size: usize, audio: &mut AudioPlayer, gilrs: &mut Gilrs) {
     const SPEED: f32 = 8.0;
     const ROTATION_SPEED: f32 = PI / 60.0;
 
@@ -68,6 +69,35 @@ pub fn process_event(window: &Window, player: &mut Player, level: usize, block_s
         player.last_mouse_x = mouse_x;
 
         player.a = player.a % (2.0 * PI);
+    }
+
+
+    while let Some(Event { id, event, .. }) = gilrs.next_event() {
+        match event {
+            gilrs::EventType::ButtonPressed(Button::DPadLeft, _) => {
+                player.a -= ROTATION_SPEED;
+            }
+            gilrs::EventType::ButtonPressed(Button::DPadRight, _) => {
+                player.a += ROTATION_SPEED;
+            }
+            gilrs::EventType::ButtonPressed(Button::DPadUp, _) => {
+                next_x = player.pos.x + SPEED * player.a.cos();
+                next_y = player.pos.y + SPEED * player.a.sin();
+                if !is_wall(&maze, next_x, next_y, block_size) {
+                    player.pos.x = next_x;
+                    player.pos.y = next_y;
+                }
+            }
+            gilrs::EventType::ButtonPressed(Button::DPadDown, _) => {
+                next_x = player.pos.x - SPEED * player.a.cos();
+                next_y = player.pos.y - SPEED * player.a.sin();
+                if !is_wall(&maze, next_x, next_y, block_size) {
+                    player.pos.x = next_x;
+                    player.pos.y = next_y;
+                }
+            }
+            _ => {}
+        }
     }
 }
 

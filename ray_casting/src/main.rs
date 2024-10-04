@@ -18,8 +18,10 @@ use crate::player::{Player, process_event};
 use std::time::{Instant, Duration};
 use nalgebra_glm::{Vec2};
 use render::{render3d_with_minimap, render_menu, render_enemies};
+use gilrs::{Gilrs, Button, Event};
 
 fn main() {
+    let mut gilrs = Gilrs::new().unwrap();
     let window_width = 1300;
     let window_height = 900;
     let block_size = 100;
@@ -123,7 +125,7 @@ fn main() {
             render_menu(&mut framebuffer, 2); 
         } else if mode == "GAME" {
             framebuffer.set_current_color(Color::new(50,50,100));
-            process_event(&window, &mut player, level, block_size, &mut sound_effect);
+            process_event(&window, &mut player, level, block_size, &mut sound_effect, &mut gilrs);
             framebuffer.clear();
             framebuffer.set_current_color(Color::new(50,50,100));
             render3d_with_minimap(&mut framebuffer, &mut player, level, &mut z_buffer, &mut enemies);
