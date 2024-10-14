@@ -1,5 +1,4 @@
 use crate::color::Color;
-use crate::bmp::write_bmp_file;
 #[derive(Debug, Clone)]
 pub struct FrameBuffer {
     pub width: usize,
@@ -40,10 +39,6 @@ impl FrameBuffer {
 
     pub fn set_current_color(&mut self, color:Color){
         self.current_color = color;
-    }
-    pub fn write_to_bmp(&self, file_path: &str) -> std::io::Result<()> {
-        let buffer: Vec<u32> = self.buffer.iter().map(|c| c.to_hex()).collect();
-        write_bmp_file(file_path, &buffer, self.width, self.height)
     }
     pub fn cast_buffer(&self) -> Vec<u32> {
         let mut casted_vector: Vec<u32> = Vec::with_capacity(self.buffer.len());

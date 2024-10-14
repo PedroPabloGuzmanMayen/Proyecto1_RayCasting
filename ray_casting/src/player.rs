@@ -14,8 +14,8 @@ pub struct Player {
     pub last_mouse_x: f32
 
 }
-
-pub fn process_event(window: &Window, player: &mut Player, level: usize, block_size: usize, audio: &mut AudioPlayer, gilrs: &mut Gilrs) {
+// Camera con movimiento (10 puntos)
+pub fn process_event(window: &Window, player: &mut Player, level: usize, block_size: usize, gilrs: &mut Gilrs) {
     const SPEED: f32 = 8.0;
     const ROTATION_SPEED: f32 = PI / 60.0;
 
@@ -45,6 +45,7 @@ pub fn process_event(window: &Window, player: &mut Player, level: usize, block_s
         if !is_wall(&maze, next_x, next_y, block_size) {
             player.pos.x = next_x;
             player.pos.y = next_y;
+            println!("Player x position {}, player y postion {}", player.pos.x, player.pos.y);
         }
     }
 
@@ -54,11 +55,12 @@ pub fn process_event(window: &Window, player: &mut Player, level: usize, block_s
         if !is_wall(&maze, next_x, next_y, block_size) {
             player.pos.x = next_x;
             player.pos.y = next_y;
+            println!("Player x position {}, player y postion {}", player.pos.x, player.pos.y);
         }
 
     }
 
-
+    //Soporte para rotación con mouse (1o puntos)
     if let Some(mouse_pos) = window.get_mouse_pos(minifb::MouseMode::Discard) {
         let mouse_x = mouse_pos.0 as f32;
         let mouse_sensitivity = player.mouse_sensitivity;
@@ -71,7 +73,7 @@ pub fn process_event(window: &Window, player: &mut Player, level: usize, block_s
         player.a = player.a % (2.0 * PI);
     }
 
-
+    //Soporte de control (20 puntos)
     while let Some(Event { id, event, .. }) = gilrs.next_event() {
         match event {
             gilrs::EventType::ButtonPressed(Button::DPadLeft, _) => {
@@ -115,7 +117,3 @@ fn is_wall(maze: &Vec<Vec<char>>, x: f32, y: f32, block_size: usize) -> bool {
     maze[row][col] != ' '
 }
 
-
-fn move_enemy(enemies: &mut Vec<Vec2>, maze: &Vec<Vec<char>>, block_size: usize, enemy_speed: usize) {
-    
-}

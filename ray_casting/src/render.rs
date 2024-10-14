@@ -19,7 +19,7 @@ static WALL6:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/tex
 static WELCOME:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/main.png")));
 static COIN:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/key_big.png")));
 static SELECT:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/select.png")));
-
+static END:Lazy<Arc<Texture>> = Lazy::new(|| Arc::new(Texture::new("assets/textures/end.png")));
 
 fn cell_to_texture(cell: char, tx:u32, ty:u32, level: usize, enemies: &mut Vec<Vec2>) -> Color {
     let wall = match level {
@@ -39,7 +39,7 @@ fn cell_to_texture(cell: char, tx:u32, ty:u32, level: usize, enemies: &mut Vec<V
         '+' => wall.get_pixel_color(tx, ty),
         '-' => wall2.get_pixel_color(tx, ty),
         '|' => wall.get_pixel_color(tx, ty),
-        //' ' => wall2.get_pixel_color(tx, ty),
+        'w' => Color::new(255,0,0),
         _ => Color::new(0,0,0)
     }
 }
@@ -50,6 +50,7 @@ fn cell_to_color(cell: char) -> Color {
         '-' => Color::new(255, 255, 0),
         '|' => Color::new(255, 165, 0),
         ' ' => Color::new(255, 255, 255),
+        'w' => Color::new(255,0,0),
         _ => Color::new(0,0,0)
     }
 }
@@ -103,7 +104,7 @@ fn render2d(
     for i in 0..num_rays {
         let current_ray = i as f32 / num_rays as f32;
         let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
-        cast_ray(framebuffer, &maze, &player, a, block_size, true);
+        cast_ray(framebuffer, &maze, &player, a, block_size, true, 0.7);
     }
 }
 
@@ -136,7 +137,7 @@ fn render3d(framebuffer: &mut FrameBuffer, player: &Player, level:usize, z_Buffe
     for i in 0..num_rays {
         let current_ray = i as f32 / num_rays as f32;
         let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
-        let intersect = cast_ray(framebuffer, &maze, &player, a, block_size, false);
+        let intersect = cast_ray(framebuffer, &maze, &player, a, block_size, false, 1.0);
 
         let distance_to_wall = intersect.distance.max(0.1);
         let distance_to_projection_plane = 50.0;
@@ -154,6 +155,7 @@ fn render3d(framebuffer: &mut FrameBuffer, player: &Player, level:usize, z_Buffe
     }
 }
 
+//Minimapa (10 puntos)
 pub fn render3d_with_minimap(framebuffer: &mut FrameBuffer, player: &Player, level:usize, z_Buffer: &mut [f32], enemies: &mut Vec<Vec2>) {
     render3d(framebuffer, player, level, z_Buffer,enemies); 
     let minimap_scale = 0.2; 
@@ -171,13 +173,14 @@ pub fn render3d_with_minimap(framebuffer: &mut FrameBuffer, player: &Player, lev
         level
     ); 
 }
-
+//Pantalla de bienvenida (5 puntos)
 pub fn render_menu(framebuffer: &mut FrameBuffer, mode: usize) {
     framebuffer.clear();
 
     let image = match mode {
         1 => WELCOME.clone(),
-        _ => SELECT.clone()
+        2 => SELECT.clone(),
+        _ => END.clone()
     };
 
     let texture_width = 1920.0;
@@ -199,55 +202,4 @@ pub fn render_menu(framebuffer: &mut FrameBuffer, mode: usize) {
     }
 }
 
-pub fn render_enemy(framebuffer: &mut FrameBuffer, player: &Player, pos:&Vec2, z_Buffer: &mut [f32]){
-    let sprite_a = (pos.y - player.pos.y).atan2(pos.x - player.pos.x);
-
-    if sprite_a < 0.0 {
-        return;
-    }
-
-    let sprite_d = ((player.pos.x - pos.x).powi(2) + (player.pos.y - pos.y).powi(2)).sqrt();
-
-
-    if sprite_d < 400.0{
-        return;
-    }
-
-    let screen_height = framebuffer.height;
-    let screen_width = framebuffer.width;
-
-    let sprite_size = (screen_height as f32 / sprite_d) * 100.0;
-    let start_x = ((sprite_a - player.a) * (screen_height as f32 / player.fov) + (screen_width as f32 / 2.0) - (sprite_size / 2.0)).max(0.0);
-    let start_y = ((screen_height as f32/2.0) - (sprite_size/2.0)).max(0.0);
-    let end_x = ((start_x + sprite_size) as usize).min(framebuffer.width);
-    let end_y = ((start_y+ sprite_size) as usize).min(framebuffer.height);
-
-    if end_x <= 0{
-        return;
-    }
-
-    if (start_x as usize) < framebuffer.width && sprite_d < z_Buffer[start_x as usize ]{
-        for x in start_x as usize..end_x{
-            for y in start_y as usize..end_y as usize{
-                let tx = ((x -start_x as usize) * 32 / sprite_size as usize) as u32;
-                let ty = (((y - start_y as usize)) * 32 / sprite_size as usize) as u32;
-                let color = COIN.get_pixel_color(tx, ty);
-                if color.to_hex() != Color::new(0,0,0).to_hex() && color.to_hex() != Color::new(255,0,0).to_hex(){
-                    framebuffer.set_current_color(color);
-                    framebuffer.point(x,y)
-                }
-            }
-    
-            z_Buffer[x] = sprite_d;
-        }
-    }
-    
-    
-}
-pub fn render_enemies(framebuffer: &mut FrameBuffer, player: &Player, z_Buffer: &mut [f32], enemies: &Vec<Vec2>){
-
-    for enemy in enemies{
-        render_enemy(framebuffer, player, &enemy, z_Buffer);
-    }
-}
 

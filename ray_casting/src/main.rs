@@ -1,6 +1,6 @@
 mod framebuffer;
 mod color;
-mod bmp;
+
 mod maze;
 mod player;
 mod caster;
@@ -8,7 +8,7 @@ mod render;
 mod texture;
 mod music;
 use crate::texture::Texture;
-use crate::maze::{load_maze};
+use crate::maze::{load_maze, get_win_position};
 use crate::framebuffer::FrameBuffer;
 use crate::color::Color;
 use crate::music::AudioPlayer;
@@ -17,8 +17,12 @@ use minifb::{Window, WindowOptions, Key};
 use crate::player::{Player, process_event};
 use std::time::{Instant, Duration};
 use nalgebra_glm::{Vec2};
-use render::{render3d_with_minimap, render_menu, render_enemies};
+use render::{render3d_with_minimap, render_menu};
 use gilrs::{Gilrs, Button, Event};
+
+fn is_near(pos1: &Vec2, pos2: &Vec2, epsilon: f32) -> bool {
+    (pos1 - pos2).magnitude() < epsilon
+}
 
 fn main() {
     let mut gilrs = Gilrs::new().unwrap();
@@ -26,8 +30,18 @@ fn main() {
     let window_height = 900;
     let block_size = 100;
     let level1_music = AudioPlayer::new("assets/music/Jungle.mp3");
-    let mut sound_effect = AudioPlayer::new("assets/music/pasos.mp3");
+    let sound_effect = AudioPlayer::new("assets/music/pasos.mp3");
     let level2_music = AudioPlayer::new("assets/music/silm.mp3");
+    let level3_music = AudioPlayer::new("assets/music/bye.mp3");
+    let sound_effect = AudioPlayer::new("assets/music/effect.mp3");
+    let mut maze1 = load_maze("assets/levels/level1.txt");
+    let mut maze2 = load_maze("assets/levels/level2.txt");
+    let mut maze3 = load_maze("assets/levels/level3.txt");
+    let winpos1:Vec2 = get_win_position(&mut maze1, 100);
+    println!("Maze 1 x win position: {}", winpos1.x);
+    println!("Maze 1 y win position: {}", winpos1.y);
+    let winpos2:Vec2 = get_win_position(&mut maze2, 100);
+    let winpos3:Vec2 = get_win_position(&mut maze3, 100);
 
     const EXIT_POSITION: Vec2 = Vec2::new(500.0, 300.0);
 
@@ -88,17 +102,18 @@ fn main() {
 
         let key_enter_pressed = window.is_key_down(Key::Enter);
         if key_enter_pressed && !last_key_enter && mode == "MENU" {
+            sound_effect.play(); //Efectos de sonido (10 puntos)
             mode = "SELECT";
         }
         last_key_enter = key_enter_pressed;
-
+        //Selección de niveles (10 puntos)
         if mode == "SELECT" {
             let key_1_pressed = window.is_key_down(Key::Key1);
             if key_1_pressed && !last_key_1 {
                 mode = "GAME";
                 level = 1;
                 enemies = vec![Vec2::new(255.0, 255.0), Vec2::new(450.0, 450.0), Vec2::new(750.0, 750.0)];
-                level1_music.play();
+                level1_music.play(); //Musica de fondo (5 puntos)
             }
             last_key_1 = key_1_pressed;
 
@@ -111,11 +126,12 @@ fn main() {
             }
             last_key_2 = key_2_pressed;
 
-            let key_3_pressed = window.is_key_down(Key::Key3);
+            let key_3_pressed = window.is_key_down(Key::Key3); 
             if key_3_pressed && !last_key_3 {
                 mode = "GAME";
                 level = 3;
                 enemies = vec![Vec2::new(255.0, 100.0), Vec2::new(450.0, 450.0), Vec2::new(750.0, 750.0)];
+                level3_music.play();
             }
             last_key_3 = key_3_pressed;
         }
@@ -125,11 +141,25 @@ fn main() {
             render_menu(&mut framebuffer, 2); 
         } else if mode == "GAME" {
             framebuffer.set_current_color(Color::new(50,50,100));
-            process_event(&window, &mut player, level, block_size, &mut sound_effect, &mut gilrs);
+            process_event(&window, &mut player, level, block_size, &mut gilrs);
             framebuffer.clear();
             framebuffer.set_current_color(Color::new(50,50,100));
             render3d_with_minimap(&mut framebuffer, &mut player, level, &mut z_buffer, &mut enemies);
-            render_enemies(&mut framebuffer, &player, &mut z_buffer, &mut enemies);
+            let win_pos = match level {
+                1 => &winpos1,
+                2 => &winpos2,
+                3 => &winpos3,
+                _ => unreachable!(),
+            };
+
+            //Condición para terminar el juego y cargr una pantalla de agradecimiento (10 puntos)
+
+            if is_near(&player.pos, win_pos, 10.0) {
+                mode = "FINAL";
+                sound_effect.play(); 
+            }
+        } else if mode == "FINAL"{
+            render_menu(&mut framebuffer, 3);
         }
 
         window

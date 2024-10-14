@@ -10,7 +10,7 @@ pub struct Intersect {
 }
 
 pub fn cast_ray(framebuffer: &mut FrameBuffer, maze: &Vec<Vec<char>>, player: &Player,
-    a: f32, block_size: usize, draw_line: bool) -> Intersect {
+    a: f32, block_size: usize, draw_line: bool, scale: f32) -> Intersect {
 let mut d = 0.0;
 let mut x;
 let mut y;
@@ -45,7 +45,7 @@ if draw_line {
 
 if maze[j][i] != ' ' {
 return Intersect {
-    distance: d,
+    distance: d * scale,
     impact: maze[j][i],
     tx: max_hit
 };
@@ -54,7 +54,7 @@ return Intersect {
 d += 0.1; 
 }
 Intersect {
-    distance: d,
+    distance: d * scale,
     impact: ' ',
     tx: 0
 }
